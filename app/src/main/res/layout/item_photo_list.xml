@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="utf-8"?>
+<layout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto">
+    
+    <data>
+        <variable
+            name="photo"
+            type="com.object173.photogallery.viewmodel.PhotoViewModel"/>
+    </data>
+    
+    <FrameLayout
+        android:layout_width="@dimen/gallery_image_size"
+        android:layout_height="@dimen/gallery_image_size">
+    
+        <ImageView
+            android:id="@+id/item_image_view"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:padding="8dp"
+            android:contentDescription="@{photo.title}"
+            app:image="@{photo.url}"
+            android:onClick="@{(view) -> photo.onClick(view)}"
+            android:layout_gravity="center"
+            android:scaleType="centerCrop"/>
+    
+    </FrameLayout>
+    
+</layout>
