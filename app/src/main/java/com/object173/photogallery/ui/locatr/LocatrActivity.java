@@ -2,7 +2,6 @@ package com.object173.photogallery.ui.locatr;
 
 import android.app.Dialog;
 import android.content.Context;
-import android.content.DialogInterface;
 import android.content.Intent;
 import android.support.v4.app.Fragment;
 
@@ -32,13 +31,7 @@ public class LocatrActivity extends SingleFragmentActivity {
 
         if(errorCode != ConnectionResult.SUCCESS) {
             final Dialog errorDialog = apiAvailability
-                    .getErrorDialog(this, errorCode, REQUEST_ERROR,
-                            new DialogInterface.OnCancelListener() {
-                                @Override
-                                public void onCancel(final DialogInterface dialog) {
-                                    finish();
-                                }
-                            });
+                    .getErrorDialog(this, errorCode, REQUEST_ERROR, dialog -> finish());
             errorDialog.show();
         }
     }

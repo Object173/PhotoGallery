@@ -4,7 +4,6 @@ import android.Manifest;
 import android.annotation.SuppressLint;
 import android.arch.lifecycle.Lifecycle;
 import android.arch.lifecycle.LifecycleObserver;
-import android.arch.lifecycle.MutableLiveData;
 import android.arch.lifecycle.OnLifecycleEvent;
 import android.content.Context;
 import android.location.Location;
@@ -26,7 +25,6 @@ import com.google.android.gms.maps.model.LatLng;
 import com.google.android.gms.maps.model.LatLngBounds;
 import com.google.android.gms.maps.model.Marker;
 import com.google.android.gms.maps.model.MarkerOptions;
-import com.google.android.gms.tasks.OnSuccessListener;
 import com.object173.photogallery.R;
 import com.object173.photogallery.model.GalleryItem;
 import com.object173.photogallery.util.PermissionUtil;
@@ -34,6 +32,8 @@ import com.object173.photogallery.util.PhotoLoadUtil;
 
 import java.util.HashMap;
 import java.util.List;
+
+import io.reactivex.subjects.PublishSubject;
 
 final class MapHelper implements LifecycleObserver {
     private static final String[] LOCATION_PERMISSIONS = new String[] {
@@ -50,7 +50,7 @@ final class MapHelper implements LifecycleObserver {
     private GoogleMap mMap;
     private PhotoInfoWindow mPhotoInfoWindow;
 
-    private MutableLiveData<Location> mCurrentLocation = new MutableLiveData<>();
+    private final PublishSubject<Location> mLocationSubject;
 
     private MapListener mMapListener;
     public interface MapListener {
@@ -62,6 +62,7 @@ final class MapHelper implements LifecycleObserver {
                @NonNull final MapListener mapListener) {
         mContext = context;
         mMapListener = mapListener;
+        mLocationSubject = PublishSubject.create();
 
         mFusedLocationClient = LocationServices.getFusedLocationProviderClient(context);
 
@@ -90,6 +91,7 @@ final class MapHelper implements LifecycleObserver {
         mMapListener = null;
         mContext = null;
         mClient.disconnect();
+        mLocationSubject.onComplete();
     }
 
     void setMap(@NonNull final GoogleMap map) {
@@ -131,20 +133,15 @@ final class MapHelper implements LifecycleObserver {
             return;
         }
         mFusedLocationClient.getLastLocation()
-                .addOnSuccessListener(new OnSuccessListener<Location>() {
-                    @Override
-                    public void onSuccess(final Location location) {
-                        mCurrentLocation.setValue(location);
-                    }
-                });
+                .addOnSuccessListener(mLocationSubject::onNext);
     }
 
     boolean isClientConnected() {
         return mClient.isConnected();
     }
 
-    MutableLiveData<Location> getCurrentLocation() {
-        return mCurrentLocation;
+    PublishSubject<Location> getLocationSubject() {
+        return mLocationSubject;
     }
 
     boolean onRequestPermission(final int requestCode) {

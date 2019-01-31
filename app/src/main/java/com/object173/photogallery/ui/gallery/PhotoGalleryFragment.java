@@ -65,12 +65,7 @@ public final class PhotoGalleryFragment extends VisibleFragment {
                              @Nullable final Bundle savedInstanceState) {
         mBinding = DataBindingUtil.inflate(inflater, R.layout.fragment_photo_gallery, container, false);
 
-        mIsLoadData.observe(this, new Observer<Boolean>() {
-            @Override
-            public void onChanged(@Nullable final Boolean aBoolean) {
-                setProgressStatus(aBoolean == null ? true : aBoolean);
-            }
-        });
+        mIsLoadData.observe(this, aBoolean -> setProgressStatus(aBoolean == null ? true : aBoolean));
 
         mBinding.photoRecyclerView.setLayoutManager(new GridLayoutManager(getActivity(), 3));
         mBinding.photoRecyclerView.getViewTreeObserver()
@@ -88,12 +83,9 @@ public final class PhotoGalleryFragment extends VisibleFragment {
                     }
                 });
 
-        mBinding.swipeRefreshLayout.setOnRefreshListener(new SwipeRefreshLayout.OnRefreshListener() {
-            @Override
-            public void onRefresh() {
-                final String query = PreferencesUtil.getStoredQuery(getActivity());
-                setSearchQuery(query);
-            }
+        mBinding.swipeRefreshLayout.setOnRefreshListener(() -> {
+            final String query = PreferencesUtil.getStoredQuery(getActivity());
+            setSearchQuery(query);
         });
 
         return mBinding.getRoot();
@@ -120,12 +112,9 @@ public final class PhotoGalleryFragment extends VisibleFragment {
             }
         });
 
-        searchView.setOnSearchClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(final View view) {
-                final String query = PreferencesUtil.getStoredQuery(getActivity());
-                searchView.setQuery(query, false);
-            }
+        searchView.setOnSearchClickListener(view -> {
+            final String query = PreferencesUtil.getStoredQuery(getActivity());
+            searchView.setQuery(query, false);
         });
 
         final MenuItem toggleItem = menu.findItem(R.id.menu_item_toggle_polling);
@@ -180,12 +169,9 @@ public final class PhotoGalleryFragment extends VisibleFragment {
                         .setInitialLoadKey(0)
                         .build();
 
-        mPagedListLiveData.observe(this, new Observer<PagedList<GalleryItem>>() {
-            @Override
-            public void onChanged(@Nullable final PagedList<GalleryItem> galleryItems) {
-                mPhotoAdapter.submitList(galleryItems);
-                mIsLoadData.setValue(false);
-            }
+        mPagedListLiveData.observe(this, galleryItems -> {
+            mPhotoAdapter.submitList(galleryItems);
+            mIsLoadData.setValue(false);
         });
     }
 }

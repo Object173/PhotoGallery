@@ -1,6 +1,5 @@
 package com.object173.photogallery.ui.locatr;
 
-import android.arch.lifecycle.MutableLiveData;
 import android.arch.lifecycle.Observer;
 import android.content.Intent;
 import android.os.Bundle;
@@ -10,28 +9,23 @@ import android.view.Menu;
 import android.view.MenuInflater;
 import android.view.MenuItem;
 
-import com.google.android.gms.maps.GoogleMap;
-import com.google.android.gms.maps.OnMapReadyCallback;
 import com.google.android.gms.maps.SupportMapFragment;
 import com.object173.photogallery.ui.page.PhotoPageActivity;
 import com.object173.photogallery.R;
 import com.object173.photogallery.model.GalleryItem;
 
-import java.io.Serializable;
-import java.util.Arrays;
 import java.util.List;
+
+import io.reactivex.android.schedulers.AndroidSchedulers;
+import io.reactivex.schedulers.Schedulers;
 
 public final class LocatrFragment extends SupportMapFragment
         implements Observer<List<GalleryItem>>, MapHelper.MapListener {
-
-    private static final String KEY_CURRENT_IMAGE = "current_image";
-    private MutableLiveData<List<GalleryItem>> mLiveGalleryItem = new MutableLiveData<>();
 
     private boolean mIsRefreshing = false;
     private MenuItem mSearchMenuItem;
 
     private MapHelper mMapHelper;
-    private ImageLoadHelper mImageLoadHelper;
 
     public static LocatrFragment newInstance() {
         return new LocatrFragment();
@@ -43,37 +37,20 @@ public final class LocatrFragment extends SupportMapFragment
         setHasOptionsMenu(true);
         setRetainInstance(true);
 
-        if(savedInstanceState != null) {
-            final Serializable itemState = savedInstanceState.getSerializable(KEY_CURRENT_IMAGE);
-            if(itemState != null) {
-                final List<GalleryItem> items = Arrays.asList((GalleryItem[])itemState);
-                mLiveGalleryItem.setValue(items);
-            }
-        }
-        mLiveGalleryItem.observe(this, this);
-
         mMapHelper = new MapHelper(getActivity(), this);
+        mMapHelper.getLocationSubject()
+                .subscribeOn(Schedulers.io())
+                .observeOn(AndroidSchedulers.mainThread())
+                .subscribe(ImageLoadHelper.getInstance()::loadImages);
         getLifecycle().addObserver(mMapHelper);
-        mImageLoadHelper = new ImageLoadHelper(this,
-                mLiveGalleryItem, mMapHelper.getCurrentLocation());
 
-        getMapAsync(new OnMapReadyCallback() {
-            @Override
-            public void onMapReady(final GoogleMap googleMap) {
-                mMapHelper.setMap(googleMap);
-                if(mLiveGalleryItem.getValue() == null) {
-                    findImage();
-                }
+        getMapAsync(googleMap -> {
+            mMapHelper.setMap(googleMap);
+            ImageLoadHelper.getInstance().observe(this, this);
+            if(savedInstanceState == null) {
+                findImage();
             }
         });
-    }
-
-    @Override
-    public void onSaveInstanceState(@NonNull final Bundle outState) {
-        super.onSaveInstanceState(outState);
-        if(mLiveGalleryItem.getValue() != null) {
-            outState.putSerializable(KEY_CURRENT_IMAGE, mLiveGalleryItem.getValue().toArray());
-        }
     }
 
     @Override

@@ -1,5 +1,4 @@
 package com.object173.photogallery.fetchr;
-import android.util.Log;
 
 import com.object173.photogallery.model.GalleryItem;
 import com.object173.photogallery.model.GalleryItemList;
@@ -9,8 +8,10 @@ import com.object173.photogallery.util.log.MyLoggerFactory;
 import java.io.IOException;
 import java.util.List;
 
+import io.reactivex.Single;
 import retrofit2.Response;
 import retrofit2.Retrofit;
+import retrofit2.adapter.rxjava2.RxJava2CallAdapterFactory;
 import retrofit2.converter.gson.GsonConverterFactory;
 
 public final class FlickrFetchr {
@@ -25,6 +26,7 @@ public final class FlickrFetchr {
         Retrofit retrofit = new Retrofit.Builder()
                 .baseUrl(FlickrAPI.BASE_URL)
                 .addConverterFactory(GsonConverterFactory.create())
+                .addCallAdapterFactory(RxJava2CallAdapterFactory.create())
                 .build();
         mFlickrAPI = retrofit.create(FlickrAPI.class);
     }
@@ -44,6 +46,12 @@ public final class FlickrFetchr {
     public List<GalleryItem> searchItems(final double latitude, final double longitude,
                                          final int page) throws IOException {
         return fetchItems(mFlickrAPI.getPhotos(API_KEY, latitude, longitude, page).execute());
+    }
+
+    public Single<List<GalleryItem>> searchItemsRx(final double latitude, final double longitude,
+                                                   final int page) {
+        return mFlickrAPI.getPhotosRx(API_KEY, latitude, longitude, page)
+                .map(galleryItemList -> galleryItemList.getPhotos().getGalleryItemList());
     }
 
     private List<GalleryItem> fetchItems(final Response<GalleryItemList> response) {
